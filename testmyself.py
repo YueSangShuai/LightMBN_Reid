@@ -17,8 +17,8 @@ import torch
 
 
 args.eval_batch_size=128
-args.config="/data/yuesang/LightMBN/myselff/cfg_lmbn_n_market.yaml"
-args.pre_train="/data/yuesang/LightMBN/myselff/lmbn_n_market.pth"
+args.config="/data/yuesang/Reid/LightMBN/myselff/myself.yaml"
+args.pre_train="/data/yuesang/Reid/LightMBN/myselff/lmbn_n_cuhk03_d.pth"
 if args.config != "":
     with open(args.config, "r") as f:
         config = yaml.full_load(f)

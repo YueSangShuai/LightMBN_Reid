@@ -2,12 +2,78 @@ import torch
 import numpy as np
 from utils.functions import evaluation,evaluation_myself
 from utils.re_ranking import re_ranking, re_ranking_gpu
+import os 
+import shutil
+import matplotlib.pyplot as plt
+from PIL import Image
+
 
 try:
     import wandb
 except ImportError:
     wandb = None
 
+
+def save_rank_n_visualizations(
+    distmat,
+    q_pids,
+    g_pids,
+    queryset,
+    galleryset,
+    save_dir="./rank_n_visualizations",
+    rank_n=5,
+    figsize=(15, 5)
+):
+    """
+    For each query, plot the query image and top-N matched gallery images (same pid) in one image.
+    """
+    if os.path.exists(save_dir):
+        shutil.rmtree(save_dir)
+    os.makedirs(save_dir)
+
+    distmat = torch.tensor(distmat).float()
+    num_q = distmat.size(0)
+
+    for q_idx in range(num_q):
+        q_pid = q_pids[q_idx]
+        q_img_path = queryset[q_idx][0]
+
+        # Get sorted gallery indices by distance
+        ranked_indices = torch.argsort(distmat[q_idx])
+        selected_gallery_paths = []
+
+        for g_idx in ranked_indices:
+            if g_pids[g_idx] == q_pid and g_idx != q_idx:
+                selected_gallery_paths.append(galleryset[g_idx][0])
+                if len(selected_gallery_paths) >= rank_n:
+                    break
+
+        # If no matches found, skip
+        if len(selected_gallery_paths) == 0:
+            continue
+
+        # Plot query + rank-N
+        fig, axes = plt.subplots(1, rank_n + 1, figsize=figsize)
+        fig.suptitle(f"Query {q_idx} | PID {q_pid}", fontsize=12)
+
+        # Plot query image
+        q_img = Image.open(q_img_path).convert("RGB")
+        axes[0].imshow(q_img)
+        axes[0].set_title("Query")
+        axes[0].axis("off")
+
+        # Plot top-N matched gallery images
+        for i, g_path in enumerate(selected_gallery_paths):
+            g_img = Image.open(g_path).convert("RGB")
+            axes[i + 1].imshow(g_img)
+            axes[i + 1].set_title(f"Rank-{i+1}")
+            axes[i + 1].axis("off")
+
+        # Save to file
+        save_path = os.path.join(save_dir, f"query_{q_idx:04d}_pid{q_pid}.jpg")
+        plt.tight_layout()
+        plt.savefig(save_path)
+        plt.close()
 
 class Engine:
     def __init__(self, args, model, optimizer, scheduler, loss, loader, ckpt):
@@ -18,6 +84,7 @@ class Engine:
         self.testset = loader.galleryset
         self.queryset = loader.queryset
 
+        self.loader=loader
         self.ckpt = ckpt
         self.model = model
         self.optimizer = optimizer
@@ -168,7 +235,7 @@ class Engine:
             time_elapsed // 60, time_elapsed % 60)
         print(log, end='\n')
         
-
+        
         
         if self.args.re_rank:
             # q_g_dist = np.dot(qf, np.transpose(gf))
@@ -182,6 +249,19 @@ class Engine:
             # dist = cdist(qf, gf, metric='cosine')
             dist = 1 - torch.mm(qf, gf.t()).cpu().numpy()
 
+
+        save_dir = os.path.join("/data/yuesang", f'vis_epoch_1')
+        print("6666666666666")
+        save_rank_n_visualizations(
+            dist,
+            query_ids,
+            gallery_ids,
+            self.loader.query_for_mat,
+            self.loader.gallery_for_mat,
+            save_dir,
+            rank_n=5
+        )
+        
         
         now = datetime.datetime.now()
         r, m_ap = evaluation_myself(dist, query_ids, gallery_ids, query_cams, gallery_cams, 50,self.args.eval_batch_size)

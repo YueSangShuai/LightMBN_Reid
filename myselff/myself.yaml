@@ -15,7 +15,7 @@ cutout: false
 dampening: 0
 data_test: "myselfdateset"
 data_train: "myselfdateset"
-datadir: /data/yuesang/LightMBN/ReIDataset/
+datadir: /data/yuesang/Reid/LightMBN/ReIDataset/
 decay_type: step_50_80_110
 drop_block: true
 epochs: 140

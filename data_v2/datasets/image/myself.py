@@ -43,7 +43,9 @@ class MyselfDateset(ImageDataset):
         query = self.process_dir(self.query_dir, relabel=False)
         gallery = self.process_dir(self.gallery_dir, relabel=False)
 
-
+        self.query_for_mat=query
+        self.gallery_for_mat=gallery
+        
         super(MyselfDateset, self).__init__(train, query, gallery, **kwargs)
 
     def get_ids(self,dir_path):
@@ -78,5 +80,4 @@ class MyselfDateset(ImageDataset):
             folder_iamge_files=self.get_filelist(os.path.join(dir_path,folder))
             data_period=[(image_path,pid,-1) for image_path in folder_iamge_files]
             data+=data_period
-            
         return data

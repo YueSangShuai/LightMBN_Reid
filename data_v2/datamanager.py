@@ -185,8 +185,10 @@ class ImageDataManager(DataManager):
             
         trainset = sum(trainset)
 
+
         self._num_train_pids = trainset.num_train_pids
         self._num_train_cams = trainset.num_train_cams
+
 
         train_sampler = build_train_sampler(
             trainset.train, train_sampler,
@@ -205,12 +207,16 @@ class ImageDataManager(DataManager):
             drop_last=True
         )
 
+
+        
+        
         print('=> Loading test (target) dataset')
         self.testloader = {name: {'query': None, 'gallery': None}
                            for name in self.targets}
         self.testdataset = {name: {'query': None, 'gallery': None}
                             for name in self.targets}
 
+        
         for name in self.targets:
             # build query loader
             queryset = init_image_dataset(
@@ -224,6 +230,10 @@ class ImageDataManager(DataManager):
                 cuhk03_classic_split=cuhk03_classic_split,
                 market1501_500k=market1501_500k
             )
+            
+            self.query_for_mat=queryset.query_for_mat
+            self.gallery_for_mat=queryset.gallery_for_mat
+            
             # self.testloader[name]['query'] = torch.utils.data.DataLoader(
             self.testloader[name]['query'] = DataloaderX(
                 queryset,
@@ -234,6 +244,8 @@ class ImageDataManager(DataManager):
                 drop_last=False
             )
 
+
+            
             # build gallery loader
             galleryset = init_image_dataset(
                 name,
@@ -257,6 +269,7 @@ class ImageDataManager(DataManager):
                 drop_last=False
             )
             self.query_loader = self.testloader[name]['query']
+            
             self.test_loader = self.testloader[name]['gallery']
             self.galleryset = galleryset
             self.queryset = queryset
@@ -264,6 +277,8 @@ class ImageDataManager(DataManager):
             self.testdataset[name]['gallery'] = galleryset.gallery
             args.num_classes = self.num_train_pids
 
+
+        
         print('\n')
         print('  **************** Summary ****************')
         print('  train            : {}'.format(self.sources))
